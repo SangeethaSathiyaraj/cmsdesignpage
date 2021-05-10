@@ -1,0 +1,162 @@
+
+<?php
+include("simple_html_dom.php");
+ini_set('MAX_EXECUTION_TIME', '-1');
+ini_set('memory_limit', '-1');
+$url  = "https://store.sony.com.au/sitemap";
+$curl = curl_init();
+curl_setopt($curl, CURLOPT_URL, $url);
+curl_setopt($curl, CURLOPT_HEADER, 1);
+curl_setopt($curl, CURLOPT_VERBOSE, 1);
+curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($curl,CURLOPT_CONNECTTIMEOUT,3000);
+curl_setopt($curl,CURLOPT_TIMEOUT,3000);
+curl_setopt($curl,CURLOPT_MAXREDIRS,10);
+curl_setopt($curl,CURLOPT_COOKIEFILE,"cookies.txt");
+curl_setopt($curl,CURLOPT_COOKIEJAR,"cookies.txt");
+curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($curl, CURLOPT_SSL_VERIFYHOST,  0);
+curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+$headers = array("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+$result   = curl_exec($curl);
+$mainpage = new simple_html_dom;
+$mainpages = $mainpage->load($result);
+
+$inculdegrand = array("TV &amp; Home Theatre");
+$inculdeparent = array("Television","Home Theatre Systems","Components","Home Video","Support &amp; Spare Parts");
+$includechild = array("OLED Television");
+//Find grand categories
+$categories = $mainpage->find('div.sitemapPage', 0);
+
+foreach ($categories->find("div.sitemap-link") as $grand) {
+    if ($grand->find(' a',0)) {
+        $grandCategoryName = trim($grand->find('a', 0)->plaintext);
+        $grandCategoryNameurl = trim($grand->find('a', 0)->href);
+        if(trim(in_array($grandCategoryName, $inculdegrand))) {
+        // echo $grandCategoryName. "<br>";
+        // echo $grandCategoryNameurl."<br>";
+
+  //Find parent categories
+           foreach ($categories->find("ul li") as $parent) {
+                if ($parent->find('a',0)) {
+                    $paretCategoryName = trim($parent->find('a', 0)->plaintext);
+                    $paretCategoryNameurl = trim($parent->find('a', 0)->href);
+                    if(trim(in_array($paretCategoryName, $inculdeparent))) {
+                    //    echo $paretCategoryName. "<br>";  
+                    //    echo $paretCategoryNameurl. "<br>"; 
+                    
+  //Find Procuct name, url , price
+
+                    $headphoneurl = "https://store.sony.com.au/headphones";
+                    
+                       $curl = curl_init();
+                       curl_setopt($curl, CURLOPT_URL, $headphoneurl);
+                       curl_setopt($curl, CURLOPT_HEADER, 1);
+                       curl_setopt($curl, CURLOPT_VERBOSE, 1);
+                       curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+                       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+                       curl_setopt($curl,CURLOPT_CONNECTTIMEOUT,3000);
+                       curl_setopt($curl,CURLOPT_TIMEOUT,3000);
+                       curl_setopt($curl,CURLOPT_MAXREDIRS,10);
+                       curl_setopt($curl,CURLOPT_COOKIEFILE,"cookies.txt");
+                       curl_setopt($curl,CURLOPT_COOKIEJAR,"cookies.txt");
+                       curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                       curl_setopt($curl, CURLOPT_SSL_VERIFYHOST,  0);
+                       curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+                       $headers = array("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+                       curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+                       $result1   = curl_exec($curl);
+                       $productpage = new simple_html_dom;
+                       $productpage->load($result1);
+                        
+                        $categories1 = $productpage->find('div[id="primary"] ', 0);
+                        foreach($categories1->find("ul#search-result-items  li.span6 div.product-container") as $product) {
+                            if ($product->find('div.product-name h2 a.name-link',0)) {
+                                $productname = trim($product->find('div.product-name h2 a.name-link',0)->plaintext);
+                                $productnameurl = trim($product->find('div.product-name h2 a.name-link',0)->href);
+                                if ($product->find('div.product-price span.sale-price',0)) {
+                                  
+                                    $productprice = trim($product->find('div.product-price span.sale-price',0)->plaintext); 
+                                    
+                                // echo $productname."</br>";
+                                // echo $productnameurl."</br>";
+                                // echo $productprice."</br>";                              
+
+                                }
+                             }
+                           
+                         }  
+                                       
+                    }
+            
+                }
+                
+            }
+
+        
+           
+            if ($paginationlist = $productpage->find('div[class="span9"]' , 0 )) {  
+                $pagecount = trim($paginationlist->find('ul li', -2)->plaintext);           
+                   echo $pagecount;
+    
+                    for($i = 1; $i<= $pagecount; $i++) { 
+                         $sz = 24;
+                         $page = ($i - 1) * $sz;
+                         $paginationurl = $headphoneurl."#start=".$page."&sz=24"."</br>";
+
+                         $curl = curl_init();
+                         curl_setopt($curl, CURLOPT_URL, $paginationurl);
+                         curl_setopt($curl, CURLOPT_HEADER, 1);
+                         curl_setopt($curl, CURLOPT_VERBOSE, 1);
+                         curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+                         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+                         curl_setopt($curl,CURLOPT_CONNECTTIMEOUT,3000);
+                         curl_setopt($curl,CURLOPT_TIMEOUT,3000);
+                         curl_setopt($curl,CURLOPT_MAXREDIRS,10);
+                         curl_setopt($curl,CURLOPT_COOKIEFILE,"cookies.txt");
+                         curl_setopt($curl,CURLOPT_COOKIEJAR,"cookies.txt");
+                         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST,  0);
+                         curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+                         $headers = array("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+                         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+                         $paginationresult   = curl_exec($curl);
+                         $paginationproductpage = new simple_html_dom;
+                         $paginationproductpage->load($paginationresult);
+                          //pagination
+                           $paginationcategories = $paginationproductpage->find('div[id="primary"] ', 0);
+                          foreach($paginationcategories->find("ul#search-result-items  li.span6 div.product-container") as $paginationproduct) {
+                              if ($product->find('div.product-name h2 a.name-link',0)) {
+                                  $paginationproductname = trim($paginationproduct->find('div.product-name h2 a.name-link',0)->plaintext);
+                                  $paginationproductnameurl = trim($paginationproduct->find('div.product-name h2 a.name-link',0)->href);
+                                  if ($paginationproduct->find('div.product-price span.sale-price',0)) {
+                                    
+                                        $paginationproductprice = trim($paginationproduct->find('div.product-price span.sale-price',0)->plaintext); 
+                                                
+                                        // echo $paginationproductname."</br>";
+                                        // echo $paginationproductnameurl."</br>";
+                                        // echo $paginationproductprice."</br>";                              
+
+                                    }
+                                }
+                             
+                            }  
+                         
+                                                  
+                    }  
+                   
+            }
+            
+        }   
+   
+	    
+	}
+              
+      
+	
+}
+
+
+?>
